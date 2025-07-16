@@ -4,9 +4,10 @@ library(Rcpp)
 library(bench)
 library(here)
 library(ggplot2)
-sourceCpp(here::here("maximin_geom_seq.cpp"))
-sourceCpp(here::here("maxpro.cpp"))
-sourceCpp(here::here("criteria.cpp"))
+
+
+sourceCpp(here::here("maximin_geom_seq.cpp")) ## load maximin with geometric sequence temperatures
+sourceCpp(here::here("maxpro.cpp"))           ## load maxpro
 
 
 ## Simulation:
@@ -87,13 +88,15 @@ sim_piston_cycles_time <- function(){
   temps = maxpro_temps(50,7,5)
   X1 <- maximinLHD_geom(50,7,8,20,10,1000000,1000,0.1)$design
   X2 <- pt_maxpro_lhd(50,7,5,100000,10,2500, temps)$design
+  randX <- matrix(runif(50 * 7, min = 0, max = 1), nrow = 50, ncol = 7)
   maximin_sim <- cycle_time(X1)
   maxpro_sim <- cycle_time(X2, norm= F)
+  random <- cycle_time( randX,norm = F)
   
   box <- ggplot(data = data.frame(
-    data = c(maximin_sim$output, maxpro_sim$output),
-    type = factor(c(rep("maximin", nrow(X1)), rep("maxpro", nrow(X2))))
-  ), aes(x = data)) + geom_boxplot(fill = c("beige", "lightblue")) + facet_wrap(~type) + coord_flip()
+    second_cycle = c(maximin_sim$output, maxpro_sim$output, random$output),
+    type = factor(c(rep("maximin", nrow(X1)), rep("maxpro", nrow(X2)), rep("random_unif", nrow(randX))))
+  ), aes(x = second_cycle)) + geom_boxplot(fill = c("#f67e7d", "#843b62", "#621940")) + facet_wrap(~type) + coord_flip()
 
   ggsave(filename = "sim_cycle_time_boxplot.png", plot = box,width = 6,height = 4,units = "in",dpi = 300)
   
