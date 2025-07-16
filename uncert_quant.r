@@ -97,10 +97,14 @@ sim_piston_cycles_time <- function(){
 
   ggsave(filename = "sim_cycle_time_boxplot.png", plot = box,width = 6,height = 4,units = "in",dpi = 300)
   
+  res =  list(maximin = maximin_sim, maxpro = maxpro_sim)
+
   saveRDS( # save maxpro
-    list(maximin = maximin_sim, maxpro = maxpro_sim),
+    res,
     file = here::here("simulated_cycle_time.rds")
   )
+
+  return(res)
   
 }
 
