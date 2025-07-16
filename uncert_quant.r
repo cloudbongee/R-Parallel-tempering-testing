@@ -5,7 +5,6 @@ library(bench)
 library(here)
 library(ggplot2)
 
-
 sourceCpp(here::here("maximin_geom_seq.cpp")) ## load maximin with geometric sequence temperatures
 sourceCpp(here::here("maxpro.cpp"))           ## load maxpro
 
@@ -85,6 +84,13 @@ cycle_time <- function(LHD, norm = T, wt_upper =  60, wt_lower = 30,area_lower =
 ## parallelize: (50 times) TODO 
 ## simulation with pre_filled values
 sim_piston_cycles_time <- function(){
+  print("Running piston cycle per second simulation on a 50 x 7 matrix")
+  if(file.exists(here::here("simulated_cycle_time.rds"))){
+    response <- readline(prompt = "File simulated_cycle_time.rds exists already, do you want to overwrite it? [y/n]: ")
+    if(response != "y"){ return(NULL) }
+  }
+
+
   temps = maxpro_temps(50,7,5)
   X1 <- maximinLHD_geom(50,7,8,20,10,1000000,1000,0.1)$design
   X2 <- pt_maxpro_lhd(50,7,5,100000,10,2500, temps)$design
