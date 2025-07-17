@@ -5,9 +5,13 @@ library(bench)
 library(here)
 library(ggplot2)
 
+library(SLHD)                                 ## compare to SLHD library
+
 sourceCpp(here::here("maximin_geom_seq.cpp")) ## load maximin with geometric sequence temperatures
 sourceCpp(here::here("maxpro.cpp"))           ## load maxpro
+sourceCpp(here::here("randomLHD.cpp"))        ## randomLHD function. Generate a random LHD.
 
+reps <- 50
 
 ## Simulation:
 
@@ -15,7 +19,7 @@ sourceCpp(here::here("maxpro.cpp"))           ## load maxpro
 ## At Bloomington, Indiana, 7.16.2025
 ## Optimization of parallel tempering for Latin Hypercube Designs
 
-## Uncertainity quantification using PT
+## Uncertainity quantification using PT, EXPERIMENT:
 ## Piston motion with a cylinder. Cycle time in seconds
 
 ## Experiment from SFDesign: An R package for Space-Filling Designs
@@ -66,7 +70,7 @@ cycle_time <- function(LHD, norm = T, wt_upper =  60, wt_lower = 30,area_lower =
   X[,"ambient_temp"] = X[,"ambient_temp"] * (temp_ambience_upper - temp_ambience_lower) + temp_ambience_lower     # [290 : 296]
   X[,"filling_gas_temp"] = X[,"filling_gas_temp"] * (filling_gas_upper - filling_gas_lower) + filling_gas_lower   # [340 : 360]
 
-  ## Computation
+  ## Computation of seconds per cycle in a piston
   A <- X[,"atmospheric_press"] * X[,"surf_area"] + 19.62 * X[,"piston_wt"] - X[,"spring_coef"] * X[,"init_gas_vol"]/X[,"surf_area"]
   V <- X[,"surf_area"]/(2 * X[,"spring_coef"]) * (sqrt(A^2 + 4 * X[,"spring_coef"]* X[,"atmospheric_press"] * X[,"init_gas_vol"]/ X[,"filling_gas_temp"] * X[,"ambient_temp"]) - A)
   C <- 2 * pi * sqrt(X[,"piston_wt"]/(X[,"spring_coef"] + X[,"surf_area"]^2 * (X[,"atmospheric_press"] * X[,"init_gas_vol"] * X[,"ambient_temp"]/ (X[,"filling_gas_temp"] * V^2)) ))
@@ -81,32 +85,46 @@ cycle_time <- function(LHD, norm = T, wt_upper =  60, wt_lower = 30,area_lower =
 
 
 
-## parallelize: (50 times) TODO 
 ## simulation with pre_filled values
-sim_piston_cycles_time <- function(){
+## It runs a 50 x 7 design cycle time, and boxplots its its means and variance
+sim_piston_cycles_time <- function(reps){
   print("Running piston cycle per second simulation on a 50 x 7 matrix")
   if(file.exists(here::here("simulated_cycle_time.rds"))){
     response <- readline(prompt = "File simulated_cycle_time.rds exists already, do you want to overwrite it? [y/n]: ")
     if(response != "y"){ return(NULL) }
   }
 
-
+  
   temps = maxpro_temps(50,7,5)
-  X1 <- maximinLHD_geom(50,7,8,20,10,1000000,1000,0.1)$design
-  X2 <- pt_maxpro_lhd(50,7,5,100000,10,2500, temps)$design
-  randX <- matrix(runif(50 * 7, min = 0, max = 1), nrow = 50, ncol = 7)
-  maximin_sim <- cycle_time(X1)
-  maxpro_sim <- cycle_time(X2, norm= F)
-  random <- cycle_time( randX,norm = F)
-  
-  box <- ggplot(data = data.frame(
-    second_cycle = c(maximin_sim$output, maxpro_sim$output, random$output),
-    type = factor(c(rep("maximin", nrow(X1)), rep("maxpro", nrow(X2)), rep("random_unif", nrow(randX))))
-  ), aes(x = second_cycle)) + geom_boxplot(fill = c("#f67e7d", "#843b62", "#621940")) + facet_wrap(~type) + coord_flip()
 
-  ggsave(filename = "sim_cycle_time_boxplot.png", plot = box,width = 6,height = 4,units = "in",dpi = 300)
+
+  maximin_sim = lapply(1:reps, function(i) cycle_time(maximinLHD_geom(50,7,8,20,10,1000000,1000,0.1)$design) )
+  maxpro_sim  = lapply(1:reps, function(i) cycle_time(pt_maxpro_lhd(50,7,5,100000,10,2500, temps)$design)    )
+  random_sim  = lapply(1:reps, function(i) cycle_time(randomLHD(50,7))                                       )
+    SLHD_sim  = lapply(1:reps, function(i) cycle_time( maximinSLHD(t = 1, m = 50, k = 7)$Design )            )
+
+
   
-  res =  list(maximin = maximin_sim, maxpro = maxpro_sim)
+ 
+  ## plot means
+  meanplot <- ggplot(data = data.frame(
+    mean = c(sapply(1:reps, function(i) maximin_sim[[i]]$mean ), sapply(1:reps, function(i) maxpro_sim[[i]]$mean ), sapply(1:reps, function(i) random_sim[[i]]$mean), sapply(1:reps, function(i) SLHD_sim[[i]]$mean)),
+    type = factor(c(rep("maximin", reps), rep("maxpro", reps), rep("random_LHD", reps), rep("SLHD", reps)))
+    ), aes(x = mean) ) + geom_boxplot(fill = c("#f67e7d","#843b62","#621940", "#641927")) + facet_wrap(~type) + theme_bw() + coord_flip()
+
+  ggsave(filename = "sim_cycle_time_mean_boxplot.png", plot = meanplot,width = 6,height = 4,units = "in",dpi = 300)
+
+  ## plot variances
+  varplot <- ggplot(data = data.frame(
+    variance = c(sapply(1:reps, function(i) maximin_sim[[i]]$var), sapply(1:reps, function(i) maxpro_sim[[i]]$var), sapply(1:reps, function(i) random_sim[[i]]$var), sapply(1:reps, function(i) SLHD_sim[[i]]$var)),
+    type = factor(c(rep("maximin", reps), rep("maxpro", reps), rep("random_LHD", reps),  rep("SLHD", reps)))
+  ), aes(x = variance) ) + geom_boxplot(fill = c("#f0f5ee","#a4c196","#CBEEBD", "#ABD79A")) + facet_wrap(~type) + theme_bw() + coord_flip() 
+
+  ggsave(filename = "sim_cycle_time_variance_boxplot.png", plot = varplot,width = 6,height = 4,units = "in",dpi = 300)
+
+
+  ## SAVE RESULTS
+  res =  list(maximin = maximin_sim, maxpro = maxpro_sim, randLHD = random_sim, SLHD = SLHD_sim)
 
   saveRDS( # save maxpro
     res,
@@ -117,4 +135,4 @@ sim_piston_cycles_time <- function(){
   
 }
 
-result <- sim_piston_cycles_time()
+result <- sim_piston_cycles_time(reps)
