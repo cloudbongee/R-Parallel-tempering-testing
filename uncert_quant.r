@@ -4,6 +4,7 @@ library(Rcpp)
 library(bench)
 library(here)
 library(ggplot2)
+library(spacefillr)
 
 library(SLHD)                                 ## compare to SLHD library
 
@@ -98,10 +99,15 @@ sim_piston_cycles_time <- function(reps){
   temps = maxpro_temps(50,7,5)
 
 
-  maximin_sim = lapply(1:reps, function(i) cycle_time(maximinLHD_geom(50,7,8,20,10,1000000,1000,0.1)$design) )
+  maximin_sim = lapply(1:reps, function(i) cycle_time(maximinLHD_geom(50,7,9,20,10,1000000,1000,0.095)$design) )
   maxpro_sim  = lapply(1:reps, function(i) cycle_time(pt_maxpro_lhd(50,7,5,100000,10,2500, temps)$design)    )
   random_sim  = lapply(1:reps, function(i) cycle_time(randomLHD(50,7))                                       )
     SLHD_sim  = lapply(1:reps, function(i) cycle_time( maximinSLHD(t = 1, m = 50, k = 7)$Design )            )
+
+  sobol_test =  spacefillr::generate_sobol_set(1e6, 7)
+  sobol_sim  =  cycle_time(sobol_test, norm = F)
+  mean.response  =  mean(sobol_sim$output)
+  var.response   =  var(sobol_sim$output)
 
 
   
@@ -110,17 +116,17 @@ sim_piston_cycles_time <- function(reps){
   meanplot <- ggplot(data = data.frame(
     mean = c(sapply(1:reps, function(i) maximin_sim[[i]]$mean ), sapply(1:reps, function(i) maxpro_sim[[i]]$mean ), sapply(1:reps, function(i) random_sim[[i]]$mean), sapply(1:reps, function(i) SLHD_sim[[i]]$mean)),
     type = factor(c(rep("maximin", reps), rep("maxpro", reps), rep("random_LHD", reps), rep("SLHD", reps)))
-    ), aes(x = mean) ) + geom_boxplot(fill = c("#f67e7d","#843b62","#621940", "#641927")) + facet_wrap(~type) + theme_bw() + coord_flip()
+    ), aes(x = mean) ) + geom_boxplot(fill = c("#f67e7d","#843b62","#621940", "#641927")) + facet_wrap(~type,nrow = 1) + theme_bw() + geom_vline(xintercept = mean.response, color = "red", size = 1) + coord_flip()
 
-  ggsave(filename = "sim_cycle_time_mean_boxplot.png", plot = meanplot,width = 6,height = 4,units = "in",dpi = 300)
+  ggsave(filename = "sim_cycle_time_mean_boxplot.png", plot = meanplot,width = 16,height = 5,units = "in",dpi = 300)
 
   ## plot variances
   varplot <- ggplot(data = data.frame(
     variance = c(sapply(1:reps, function(i) maximin_sim[[i]]$var), sapply(1:reps, function(i) maxpro_sim[[i]]$var), sapply(1:reps, function(i) random_sim[[i]]$var), sapply(1:reps, function(i) SLHD_sim[[i]]$var)),
     type = factor(c(rep("maximin", reps), rep("maxpro", reps), rep("random_LHD", reps),  rep("SLHD", reps)))
-  ), aes(x = variance) ) + geom_boxplot(fill = c("#f0f5ee","#a4c196","#CBEEBD", "#ABD79A")) + facet_wrap(~type) + theme_bw() + coord_flip() 
+  ), aes(x = variance) ) + geom_boxplot(fill = c("#f0f5ee","#a4c196","#CBEEBD", "#ABD79A")) + facet_wrap(~type,nrow = 1) + theme_bw() + geom_vline(xintercept = var.response, color = "red", size = 1) + coord_flip()
 
-  ggsave(filename = "sim_cycle_time_variance_boxplot.png", plot = varplot,width = 6,height = 4,units = "in",dpi = 300)
+  ggsave(filename = "sim_cycle_time_variance_boxplot.png", plot = varplot,width = 16,height = 5,units = "in",dpi = 300)
 
 
   ## SAVE RESULTS
