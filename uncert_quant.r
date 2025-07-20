@@ -109,22 +109,23 @@ sim_piston_cycles_time <- function(reps){
   mean.response  =  mean(sobol_sim$output)
   var.response   =  var(sobol_sim$output)
 
+  df = data.frame(
+    type =    factor(c(rep("maximin",reps), rep("maxpro",reps),rep("random_LHD",reps),rep("SLHD",reps))),
+    mean =    c(sapply(1:reps, function(i) maximin_sim[[i]]$mean), sapply(1:reps, function(i) maxpro_sim[[i]]$mean), sapply(1:reps, function(i) random_sim[[i]]$mean), sapply(1:reps, function(i) SLHD_sim[[i]]$mean)),
+    var =     c(sapply(1:reps, function(i) maximin_sim[[i]]$var), sapply(1:reps, function(i) maxpro_sim[[i]]$var), sapply(1:reps, function(i) random_sim[[i]]$var), sapply(1:reps, function(i) SLHD_sim[[i]]$var)),
+    sd =      c(sapply(1:reps, function(i) maximin_sim[[i]]$sd), sapply(1:reps, function(i) maxpro_sim[[i]]$sd), sapply(1:reps, function(i) random_sim[[i]]$sd), sapply(1:reps, function(i) SLHD_sim[[i]]$sd))
+   )
 
   
  
   ## plot means
-  meanplot <- ggplot(data = data.frame(
-    mean = c(sapply(1:reps, function(i) maximin_sim[[i]]$mean ), sapply(1:reps, function(i) maxpro_sim[[i]]$mean ), sapply(1:reps, function(i) random_sim[[i]]$mean), sapply(1:reps, function(i) SLHD_sim[[i]]$mean)),
-    type = factor(c(rep("maximin", reps), rep("maxpro", reps), rep("random_LHD", reps), rep("SLHD", reps)))
-    ), aes(x = mean) ) + geom_boxplot(fill = c("#f67e7d","#843b62","#621940", "#641927")) + facet_wrap(~type,nrow = 1) + theme_bw() + geom_vline(xintercept = mean.response, color = "red", size = 1) + coord_flip()
+  meanplot <- ggplot(data = df, aes(y = type, x = mean, fill = type) ) + geom_boxplot(fill = c("#C7DAE2","#D6DFDF","#E0E3E0", "#EAEBE3")) + theme_bw() + geom_vline(xintercept = mean.response, color = "red", size = 1) + geom_point(data = df,aes(y = type, x = mean),color = "black",alpha = 0.4,size = 1.32) + coord_flip()
 
   ggsave(filename = "sim_cycle_time_mean_boxplot.png", plot = meanplot,width = 16,height = 5,units = "in",dpi = 300)
 
   ## plot variances
-  varplot <- ggplot(data = data.frame(
-    variance = c(sapply(1:reps, function(i) maximin_sim[[i]]$var), sapply(1:reps, function(i) maxpro_sim[[i]]$var), sapply(1:reps, function(i) random_sim[[i]]$var), sapply(1:reps, function(i) SLHD_sim[[i]]$var)),
-    type = factor(c(rep("maximin", reps), rep("maxpro", reps), rep("random_LHD", reps),  rep("SLHD", reps)))
-  ), aes(x = variance) ) + geom_boxplot(fill = c("#f0f5ee","#a4c196","#CBEEBD", "#ABD79A")) + facet_wrap(~type,nrow = 1) + theme_bw() + geom_vline(xintercept = var.response, color = "red", size = 1) + coord_flip()
+  ## TODO: group instead of facet_wrap()
+  varplot <- ggplot(data = df, aes(y = type, x = var, fill = type) ) + geom_boxplot(fill = c("#C7DAE3","#D6DFE0","#E0E3E1", "#EAEBE4")) + theme_bw() + geom_vline(xintercept = var.response, color = "red", size = 1) + geom_point(data = df,aes(y = type, x = var),color = "black",alpha = 0.4,size = 1.32) + coord_flip()
 
   ggsave(filename = "sim_cycle_time_variance_boxplot.png", plot = varplot,width = 16,height = 5,units = "in",dpi = 300)
 
@@ -135,6 +136,11 @@ sim_piston_cycles_time <- function(reps){
   saveRDS( # save maxpro
     res,
     file = here::here("simulated_cycle_time.rds")
+  )
+
+  saveRDS( # save maxpro
+    res,
+    file = here::here("simulated_cycle_time_data_frame.rds")
   )
 
   return(res)
