@@ -119,13 +119,25 @@ sim_piston_cycles_time <- function(reps){
   
  
   ## plot means
-  meanplot <- ggplot(data = df, aes(y = type, x = mean, fill = type) ) + geom_boxplot(fill = c("#C7DAE2","#D6DFDF","#E0E3E0", "#EAEBE3")) + theme_bw() + geom_vline(xintercept = mean.response, color = "red", size = 1) + geom_point(data = df,aes(y = type, x = mean),color = "black",alpha = 0.4,size = 1.32) + coord_flip()
+  meanplot <- ggplot(data = df, aes(y = type, x = mean, fill = type) ) + 
+    geom_boxplot(fill = c("#C7DAE2","#D6DFDF","#E0E3E0", "#EAEBE3")) + 
+    theme_bw() + geom_vline(xintercept = mean.response, color = "red", size = 1) + 
+    geom_point(data = df,aes(y = type, x = mean),color = "black",alpha = 0.4,size = 1.32) + 
+    coord_flip()+
+    labs(x = "seconds (mean)", y = "")+
+    theme(legend.position = "none", legend.frame = element_blank())
 
   ggsave(filename = "sim_cycle_time_mean_boxplot.png", plot = meanplot,width = 16,height = 5,units = "in",dpi = 300)
 
   ## plot variances
   ## TODO: group instead of facet_wrap()
-  varplot <- ggplot(data = df, aes(y = type, x = var, fill = type) ) + geom_boxplot(fill = c("#C7DAE3","#D6DFE0","#E0E3E1", "#EAEBE4")) + theme_bw() + geom_vline(xintercept = var.response, color = "red", size = 1) + geom_point(data = df,aes(y = type, x = var),color = "black",alpha = 0.4,size = 1.32) + coord_flip()
+  varplot <- ggplot(data = df, aes(y = type, x = var, fill = type) ) +
+    geom_boxplot(fill = c("#C7DAE3","#D6DFE0","#E0E3E1", "#EAEBE4")) + 
+    theme_bw() + geom_vline(xintercept = var.response, color = "red", size = 1) + 
+    geom_point(data = df,aes(y = type, x = var),color = "black",alpha = 0.4,size = 1.32) + 
+    coord_flip() + 
+    labs(x = "seconds (variance)", y = "")+
+    theme(legend.position = "none", legend.frame = element_blank())
 
   ggsave(filename = "sim_cycle_time_variance_boxplot.png", plot = varplot,width = 16,height = 5,units = "in",dpi = 300)
 

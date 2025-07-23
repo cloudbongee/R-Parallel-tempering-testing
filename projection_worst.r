@@ -73,6 +73,12 @@ comb_proj_wrst <- function(design){
 
 }
 
+
+## Call plot projections on k
+## Get rid of pow T0 maxpro
+## ensure consistency of alpha (more chains, hotter alpha)
+
+
 ## tests with a default of 18 , 19 and plots result of worse psi projection.
 compare_projections <- function(n = 18, k = 19, M = 8, Nmax = 1000000, Nswap = 10){
 
@@ -109,7 +115,7 @@ compare_projections <- function(n = 18, k = 19, M = 8, Nmax = 1000000, Nswap = 1
   plot <- ggplot(df, aes(x = x, y = psi, color = design))+
     geom_line(linewidth = 1) +
     labs(
-      x = "k number of cols",
+      x = "k density",
       y = expression(psi ~ " measure"),
       color = "Design algorithm",
       title = expression("Worse " ~ psi ~ " measure per column size")
