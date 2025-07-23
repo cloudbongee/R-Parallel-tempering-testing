@@ -112,17 +112,17 @@ compare_projections <- function(n = 18, k = 19, M = 8, Nmax = 1000000, Nswap = 1
     )
 
 
-  plot <- ggplot(df, aes(x = x, y = psi, color = design))+
+  plot <- ggplot(df, aes(x = x, y = psi, color = design, linetype = design, shape = design))+
+    geom_point() +
     geom_line(linewidth = 1) +
     labs(
       x = "k density",
       y = expression(psi ~ " measure"),
-      color = "Design algorithm",
-      title = expression("Worse " ~ psi ~ " measure per column size")
+      title = ""
     ) +
     theme_bw()
   
-  ggsave("psi_worse_proj.png", plot = plot , width = 6,height = 4,units = "in",dpi = 300)
+  ggsave("psi_worse_proj.png", plot = plot , width = 10,height = 6,units = "in",dpi = 300)
 
 
   return(df)
